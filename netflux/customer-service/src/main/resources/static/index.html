@@ -10,88 +10,9 @@
         <title>Netflux</title>
     </head>
     <body>
-        <div class="container mt-5">
-            <h1>Netflux</h1>
-
-            <div class="row mt-3" id="customer-info">
-
-                <div class="col-sm-4">
-        
-                    <div class="card w-100">
-                        <div class="card-header">
-                            Customer Profile
-                        </div>
-                        <div class="card-body">
-                            <img id="customer-image" src="images/customer-2.png" class="card-img-top" alt="...">
-                            <div class="row mt-3">
-                                <div class="col" style="width: 50%; flex:none">
-                                    <strong>Name</strong>
-                                </div>
-                                <div class="col text-capitalize" style="width: 40%;" id="customer-name">
-                                    
-                                </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col" style="width: 50%; flex:none">
-                                    <strong>Favorite Genre</strong>
-                                </div>
-                                <div class="col">
-                                    <button type="button" id="customer-genre" class="w-100 btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                      
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="#" onclick="changeCustomerGenre('ACTION')">Action</a>
-                                        <a class="dropdown-item" href="#" onclick="changeCustomerGenre('COMEDY')">Comedy</a>
-                                        <a class="dropdown-item" href="#" onclick="changeCustomerGenre('CRIME')">Crime</a>
-                                        <a class="dropdown-item" href="#" onclick="changeCustomerGenre('DRAMA')">Drama</a>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-        
-                </div>
-        
-                <div class="col-sm-8">
-        
-                    <div class="card w-100">
-                        <nav class="nav nav-pills nav-tabs nav-fill">
-                            <a id="recommended-nav" class="nav-item nav-link" data-toggle="collapse" data-target=".multi-collapse" aria-expanded="false" aria-controls="recommended-collapse all-movies-collapse" href="#">Recommended Movies</a>
-                            <a id="all-movies-nav" class="nav-item nav-link active"  data-toggle="collapse" data-target=".multi-collapse" aria-expanded="false" aria-controls="recommended-collapse all-movies-collapse" href="#">All Movies</a>
-                        </nav>
-                        <div class="card-body">
-        
-                            <table class="table" id="movies-list" style="margin-bottom: 0rem;">
-                                <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Title</th>
-                                    <th scope="col">Release Year</th>
-                                    <th scope="col">Genre</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-        
-                                </tbody>
-                            </table>
-        
-                        </div>
-                    </div>
-        
-                </div>
-                
-            </div>
-
-            <div class="card w-100" id="customer-not-found">
-                <img class="card-img-top" src="images/404.png">
-                <div class="card-body">
-                  <h5 class="card-title">Customer Not Found</h5>
-                  <p class="card-text" id="error-message"></p>
-                </div>
-              </div>
-
-        </div>
+        <div id="root"></div>
+        <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
         <script src="js/script.js"></script>
     </body>
 </html>
