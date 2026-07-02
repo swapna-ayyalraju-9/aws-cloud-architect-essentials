@@ -1,89 +1,264 @@
-/*
-    Just a simple js file for a quick demo purposes.
-*/
-const recommendedNav = document.getElementById('recommended-nav');
-const moviesList = document.querySelector('#movies-list tbody');
-const allMoviesNav = document.getElementById('all-movies-nav');
-const customerInfo = document.getElementById('customer-info');
-const customerNotFound = document.getElementById('customer-not-found');
+const { useCallback, useEffect, useState } = React;
 
-customerNotFound.style.display = 'none';
-
-recommendedNav.addEventListener('click', () => fetchCustomer());
-allMoviesNav.addEventListener('click', () => fetchAllMovies());
-
-// get customer id or assume 1
 const params = new URLSearchParams(window.location.search);
-let customerId;
-if(params.get('customer')){
-  customerId = params.get('customer');
-}else{
-  customerId = 1;
+const initialCustomerId = params.get('customer') ?? '1';
+
+const GENRES = ['ACTION', 'COMEDY', 'CRIME', 'DRAMA'];
+
+function LoadingNotice() {
+  return (
+    <div className="alert alert-info" role="status">
+      Loading data...
+    </div>
+  );
 }
 
-const fetchAllMovies = async () => {
-  const uri = `/api/movies`;
-  const response = await fetch(uri);
-  const movies = await response.json();
-  loadMovies(movies);
-  activateElement(allMoviesNav);
-}; 
-
-const fetchCustomer = async () => {
-  const uri = `/api/customers/${customerId}`;
-  try{
-    const response = await fetch(uri);
-    const data = await response.json();
-    document.getElementById('customer-name').innerText = data.name;
-    document.getElementById('customer-genre').innerText = data.favoriteGenre;
-    document.getElementById('customer-image').src = `images\\customer-${data.id}.png`;
-    loadMovies(data.recommendedMovies);
-    activateElement(recommendedNav);
-  }catch(error){
-    showCustomerNotFound(`Customer ${customerId} is not found`)
+function ErrorNotice({ message }) {
+  if (!message) {
+    return null;
   }
 
-}; 
-
-const loadMovies = (movies) => {
-  moviesList.replaceChildren();
-  movies.forEach((movie, index) => addMovieToTable(movie, index + 1));
-}; 
-
-const addMovieToTable = (movie, index) => {
-  const template = `
-      <th scope="row">${index}</th>
-      <td class="text-capitalize">${movie.title}</td>
-      <td class="text-capitalize">${movie.releaseYear}</td>
-      <td>${movie.genre}</td>               
-  `;
-  const row = document.createElement('tr');
-  row.innerHTML = template;
-  moviesList.appendChild(row);
-};
-
-const activateElement = (ele) => {
-  document.querySelector("nav > a.active").classList.remove("active", "disabled");
-  ele.classList.add("active", "disabled");
+  return (
+    <div className="alert alert-warning" role="alert">
+      {message}
+    </div>
+  );
 }
 
-const showCustomerNotFound = (message) => {
-  customerInfo.style.display = 'none';
-  customerNotFound.style.display = 'block';
-  document.getElementById('error-message').innerText = message;
+function NotFoundCard({ message }) {
+  return (
+    <div className="card w-100 mt-3">
+      <img className="card-img-top" src="images/404.png" alt="Customer not found" />
+      <div className="card-body">
+        <h5 className="card-title">Customer Not Found</h5>
+        <p className="card-text">{message}</p>
+      </div>
+    </div>
+  );
 }
 
-const changeCustomerGenre = async (favoriteGenre) => {
-  const uri = `/api/customers/${customerId}/genre`;
-  const requestBody = { favoriteGenre };
-  await fetch(uri, {
-    method: 'PATCH',
-    headers: {
-      "Content-Type": "application/json"
+function CustomerProfile({ customer, onGenreChange, updatingGenre }) {
+  if (!customer) {
+    return null;
+  }
+
+  return (
+    <div className="card w-100">
+      <div className="card-header">Customer Profile</div>
+      <div className="card-body">
+        <img
+          src={`images/customer-${customer.id}.png`}
+          className="card-img-top"
+          alt={`${customer.name} profile`}
+        />
+        <div className="row mt-3">
+          <div className="col" style={{ width: '50%', flex: 'none' }}>
+            <strong>Name</strong>
+          </div>
+          <div className="col text-capitalize" style={{ width: '40%' }}>
+            {customer.name}
+          </div>
+        </div>
+        <div className="row mt-3">
+          <div className="col" style={{ width: '50%', flex: 'none' }}>
+            <strong>Favorite Genre</strong>
+          </div>
+          <div className="col">
+            <select
+              className="form-control"
+              value={customer.favoriteGenre}
+              onChange={onGenreChange}
+              disabled={updatingGenre}
+            >
+              {GENRES.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre.charAt(0) + genre.slice(1).toLowerCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MoviesTable({ movies }) {
+  if (!movies.length) {
+    return <p className="mb-0">No movies available for this view yet.</p>;
+  }
+
+  return (
+    <table className="table mb-0">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Title</th>
+          <th scope="col">Release Year</th>
+          <th scope="col">Genre</th>
+        </tr>
+      </thead>
+      <tbody>
+        {movies.map((movie, index) => (
+          <tr key={`${movie.title}-${movie.releaseYear}`}>
+            <th scope="row">{index + 1}</th>
+            <td className="text-capitalize">{movie.title}</td>
+            <td>{movie.releaseYear}</td>
+            <td>{movie.genre}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function MovieTabs({ activeTab, onRecommendedClick, onAllMoviesClick }) {
+  const recommendedActive = activeTab === 'recommended';
+  const allMoviesActive = activeTab === 'all';
+
+  return (
+    <nav className="nav nav-pills nav-tabs nav-fill">
+      <button
+        type="button"
+        className={`nav-item nav-link ${recommendedActive ? 'active disabled' : ''}`}
+        onClick={onRecommendedClick}
+      >
+        Recommended Movies
+      </button>
+      <button
+        type="button"
+        className={`nav-item nav-link ${allMoviesActive ? 'active disabled' : ''}`}
+        onClick={onAllMoviesClick}
+      >
+        All Movies
+      </button>
+    </nav>
+  );
+}
+
+function App() {
+  const customerId = initialCustomerId;
+  const [activeTab, setActiveTab] = useState('recommended');
+  const [customer, setCustomer] = useState(null);
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingGenre, setUpdatingGenre] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [notFoundMessage, setNotFoundMessage] = useState('');
+
+  const loadCustomer = useCallback(async () => {
+    setLoading(true);
+    setErrorMessage('');
+    setNotFoundMessage('');
+
+    try {
+      const response = await fetch(`/api/customers/${customerId}`);
+      if (!response.ok) {
+        throw new Error('Customer lookup failed');
+      }
+
+      const data = await response.json();
+      setCustomer(data);
+      setMovies(data.recommendedMovies ?? []);
+      setActiveTab('recommended');
+    } catch (error) {
+      setCustomer(null);
+      setMovies([]);
+      setNotFoundMessage(`Customer ${customerId} was not found.`);
+    } finally {
+      setLoading(false);
+    }
+  }, [customerId]);
+
+  const loadAllMovies = useCallback(async () => {
+    setLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('/api/movies');
+      if (!response.ok) {
+        throw new Error('Movie lookup failed');
+      }
+
+      const data = await response.json();
+      setMovies(data);
+      setActiveTab('all');
+    } catch (error) {
+      setErrorMessage('We could not load the movie list right now.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleGenreChange = useCallback(
+    async (event) => {
+      setUpdatingGenre(true);
+      setErrorMessage('');
+
+      try {
+        const response = await fetch(`/api/customers/${customerId}/genre`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ favoriteGenre: event.target.value }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Genre update failed');
+        }
+
+        await loadCustomer();
+      } catch (error) {
+        setErrorMessage('We could not update the favorite genre.');
+      } finally {
+        setUpdatingGenre(false);
+      }
     },
-    body: JSON.stringify(requestBody)
-  });
-  await fetchCustomer();
+    [customerId, loadCustomer]
+  );
+
+  useEffect(() => {
+    loadCustomer();
+  }, [loadCustomer]);
+
+  return (
+    <div className="container mt-5">
+      <h1>Netflux</h1>
+      <p className="text-muted">
+        React 18 version of the customer dashboard using state-driven UI instead of manual DOM updates.
+      </p>
+
+      <ErrorNotice message={errorMessage} />
+
+      {notFoundMessage ? (
+        <NotFoundCard message={notFoundMessage} />
+      ) : (
+        <div className="row mt-3">
+          <div className="col-sm-4">
+            <CustomerProfile
+              customer={customer}
+              onGenreChange={handleGenreChange}
+              updatingGenre={updatingGenre}
+            />
+          </div>
+          <div className="col-sm-8">
+            <div className="card w-100">
+              <MovieTabs
+                activeTab={activeTab}
+                onRecommendedClick={loadCustomer}
+                onAllMoviesClick={loadAllMovies}
+              />
+              <div className="card-body">
+                {loading ? <LoadingNotice /> : <MoviesTable movies={movies} />}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-window.addEventListener('load', () => fetchCustomer());
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
