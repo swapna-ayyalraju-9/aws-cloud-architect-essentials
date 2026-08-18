@@ -50,3 +50,8 @@
 !**/*front-end.zip
 !**/bucket-policy-resources.zip
 netflux/postgres/db
+
+# Cursor local/agent state. Keep Spec Kit skills committed.
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
